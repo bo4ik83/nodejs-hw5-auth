@@ -5,4 +5,4 @@ const notFoundHandler = (req, res, next) => {
   next(error);
 };
 
-export default notFoundHandlersfddfddfsf;
+export default notFoundHandler;
