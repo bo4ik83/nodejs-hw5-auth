@@ -1,21 +1,10 @@
 import express from 'express';
-
-import { registerController } from '../controllers/auth.js';
-
-import ctrlWrapper from '../utils/ctrlWrapper.js';
-
+import { register } from '../controllers/auth.js';
+import { validateBody } from '../middlewares/validateBody.js';
 import { registerSchema } from '../validation/user.js';
 
-import { validateBody } from '../middlewares/validateBody.js';
-
 const router = express.Router();
-const jsonParser = express.json();
 
-router.use(
-  '/register',
-  jsonParser,
-  validateBody(registerSchema),
-  ctrlWrapper(registerController),
-);
+router.post('/register', validateBody(registerSchema), register);
 
 export default router;

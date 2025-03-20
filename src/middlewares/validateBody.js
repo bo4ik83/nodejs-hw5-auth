@@ -1,13 +1,9 @@
-export const validateBody = (schema) => {
-  return (req, res, next) => {
-    const { error } = schema.validate(req.body, { abortEarly: false });
+export const validateBody = (schema) => (req, res, next) => {
+  const { error } = schema.validate(req.body, { abortEarly: false });
 
-    if (error) {
-      return res
-        .status(400)
-        .json({ message: error.details.map((err) => err.message).join(', ') });
-    }
+  if (error) {
+    return res.status(400).json({ message: error.message });
+  }
 
-    next();
-  };
+  next();
 };
