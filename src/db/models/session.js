@@ -24,7 +24,10 @@ const sessionSchema = new mongoose.Schema(
       required: true,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
 );
 
 const Session = mongoose.model('Session', sessionSchema);
