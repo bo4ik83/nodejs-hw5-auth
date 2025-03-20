@@ -5,17 +5,15 @@ export const register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    // Проверяем, существует ли пользователь
     const existingUser = await findUserByEmail(email);
     if (existingUser) {
       throw createHttpError(409, 'Email in use');
     }
 
-    // Регистрируем нового пользователя
     const newUser = await registerUser({ name, email, password });
 
     res.status(201).json({
-      status: 'success',
+      status: 201,
       message: 'Successfully registered a user!',
       data: {
         id: newUser._id,
@@ -27,3 +25,7 @@ export const register = async (req, res, next) => {
     next(error);
   }
 };
+
+export async function login(req, res) {
+  res.send('Login');
+}
