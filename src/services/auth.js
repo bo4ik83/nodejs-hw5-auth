@@ -21,3 +21,11 @@ export const findUserByRefreshToken = async (refreshToken) => {
 export const updateUserToken = async (userId, newRefreshToken) => {
   return User.findByIdAndUpdate(userId, { refreshToken: newRefreshToken });
 };
+
+export const removeUserToken = async (userId) => {
+  return User.findByIdAndUpdate(userId, { refreshToken: null });
+};
+
+export const findUserById = async (userId) => {
+  return User.findById(userId);
+};

@@ -5,6 +5,7 @@ import {
   loginUser,
   findUserByRefreshToken,
   updateUserToken,
+  removeUserToken,
 } from '../services/auth.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -113,6 +114,35 @@ export const refreshSession = async (req, res, next) => {
         accessToken: newAccessToken,
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+      throw createHttpError(401, 'No refresh token provided');
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const user = await findUserByRefreshToken(refreshToken);
+
+    if (!user || user._id.toString() !== decoded.id) {
+      throw createHttpError(403, 'Invalid refresh token');
+    }
+
+    await removeUserToken(user._id);
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+
+    res.sendStatus(204);
   } catch (error) {
     next(error);
   }
