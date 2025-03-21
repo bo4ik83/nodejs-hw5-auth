@@ -1,5 +1,11 @@
 import createHttpError from 'http-errors';
-import { registerUser, findUserByEmail, loginUser } from '../services/auth.js';
+import {
+  registerUser,
+  findUserByEmail,
+  loginUser,
+  findUserByRefreshToken,
+  updateUserToken,
+} from '../services/auth.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 
@@ -17,7 +23,7 @@ export const register = async (req, res, next) => {
     const newUser = await registerUser({ name, email, password });
 
     res.status(201).json({
-      status: 201,
+      status: 'success',
       message: 'Successfully registered a user!',
       data: {
         id: newUser._id,
@@ -31,7 +37,6 @@ export const register = async (req, res, next) => {
 };
 
 export const login = async (req, res, next) => {
-  console.log('Login request:', req.body);
   try {
     const { email, password } = req.body;
 
@@ -65,6 +70,47 @@ export const login = async (req, res, next) => {
       message: 'Successfully logged in!',
       data: {
         accessToken,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshSession = async (req, res, next) => {
+  try {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) {
+      throw createHttpError(401, 'Refresh token is missing');
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    const user = await findUserByRefreshToken(refreshToken);
+
+    if (!user || user._id.toString() !== decoded.id) {
+      throw createHttpError(403, 'Invalid refresh token');
+    }
+
+    const newAccessToken = jwt.sign({ id: user._id }, JWT_ACCESS_SECRET, {
+      expiresIn: '15m',
+    });
+    const newRefreshToken = jwt.sign({ id: user._id }, JWT_REFRESH_SECRET, {
+      expiresIn: '7d',
+    });
+
+    await updateUserToken(user._id, newRefreshToken);
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'Strict',
+    });
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Successfully refreshed a session!',
+      data: {
+        accessToken: newAccessToken,
       },
     });
   } catch (error) {

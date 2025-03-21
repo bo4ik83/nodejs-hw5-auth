@@ -10,6 +10,14 @@ export const registerUser = async ({ name, email, password }) => {
   return User.create({ name, email, password: hashedPassword });
 };
 
-export const loginUser = async ({ userId, refreshToken }) => {
+export const loginUser = async (userId, refreshToken) => {
   return User.findByIdAndUpdate(userId, { refreshToken });
+};
+
+export const findUserByRefreshToken = async (refreshToken) => {
+  return User.findOne({ refreshToken });
+};
+
+export const updateUserToken = async (userId, newRefreshToken) => {
+  return User.findByIdAndUpdate(userId, { refreshToken: newRefreshToken });
 };
