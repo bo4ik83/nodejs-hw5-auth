@@ -1,38 +1,45 @@
 import Contact from '../db/models/contact.js';
+import createHttpError from 'http-errors';
 
-export const getAllContacts = async () => {
-  return await Contact.find({});
+export const createContact = async ({
+  name,
+  phoneNumber,
+  email,
+  isFavourite,
+  contactType,
+  userId,
+}) => {
+  try {
+    const newContact = new Contact({
+      name,
+      phoneNumber,
+      email,
+      isFavourite,
+      contactType,
+      userId,
+    });
+
+    return await newContact.save();
+  } catch (error) {
+    console.error(error);
+    throw createHttpError(500, 'Error creating contact');
+  }
 };
 
-export const getContactById = async (contactId) => {
-  const contact = await Contact.findById(contactId);
-  return contact;
+export const getContactsByUserId = async (userId) => {
+  return Contact.find({ userId });
 };
 
-export const createContact = async (contactData) => {
-  const newContact = new Contact(contactData);
-  return await newContact.save();
+export const getContactByIdAndUser = async (contactId, userId) => {
+  return Contact.findOne({ _id: contactId, userId });
 };
 
-export const patchContact = async (contactId, updateData) => {
-  const patchedContact = await Contact.findByIdAndUpdate(
-    contactId,
-    updateData,
-    {
-      new: true,
-      runValidators: true,
-    },
-  );
-
-  return patchedContact;
+export const updateContact = async (contactId, userId, updatedData) => {
+  return Contact.findOneAndUpdate({ _id: contactId, userId }, updatedData, {
+    new: true,
+  });
 };
 
-export const deleteContact = async (contactId) => {
-  const deletedContact = await Contact.findByIdAndDelete(contactId);
-
-  return deletedContact;
-};
-
-export const getContactByPhoneNumber = async (phoneNumber) => {
-  return Contact.findOne({ phoneNumber });
+export const deleteContact = async (contactId, userId) => {
+  return Contact.findOneAndDelete({ _id: contactId, userId });
 };

@@ -17,8 +17,8 @@ export const initMongoConnection = async () => {
       MONGODB_PASSWORD,
     )}@${MONGODB_URL}/${MONGODB_DB}?retryWrites=true&w=majority`;
 
-    mongoose.set('strictQuery', true); // Включає сувору перевірку запитів
-    mongoose.set('bufferCommands', false); // Вимикає буферизацію команд
+    mongoose.set('strictQuery', true);
+    mongoose.set('bufferCommands', false);
 
     await mongoose.connect(connectionString);
 
