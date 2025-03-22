@@ -9,7 +9,8 @@ import {
 
 export const getContactsController = async (req, res, next) => {
   try {
-    const contacts = await getContactsByUserId(req.user._id);
+    const userId = req.user._id;
+    const contacts = await getContactsByUserId(userId);
 
     res.status(200).json({
       status: 200,
@@ -68,8 +69,8 @@ export const createContactController = async (req, res, next) => {
   try {
     const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-    if (!name || !phoneNumber) {
-      throw new createHttpError(400, 'Name and Phone Number are required');
+    if (!req.user || !req.user._id) {
+      throw createHttpError(401, 'Unauthorized: No user ID found');
     }
 
     const newContact = await createContact({
@@ -87,7 +88,6 @@ export const createContactController = async (req, res, next) => {
       data: newContact,
     });
   } catch (error) {
-    console.error(error);
     next(error);
   }
 };
@@ -103,7 +103,10 @@ export const deleteContactController = async (req, res, next) => {
       throw createHttpError(404, 'Contact not found');
     }
 
-    res.status(204).send();
+    res.status(204).json({
+      status: 204,
+      message: 'Contact deleted successfully',
+    });
   } catch (error) {
     next(error);
   }

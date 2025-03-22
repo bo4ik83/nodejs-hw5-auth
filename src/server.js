@@ -1,33 +1,31 @@
 import express from 'express';
 import cors from 'cors';
 import pino from 'pino-http';
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import mainRouter from './routers/index.js';
 import errorHandler from './middlewares/errorHandler.js';
 import notFoundHandler from './middlewares/notFoundHandler.js';
 
-export const setupServer = () => {
-  const app = express();
-  const PORT = process.env.PORT || 3000;
+dotenv.config();
 
-  app.use(express.json());
-  app.use(cors());
-  app.use(
-    pino({
-      transport: {
-        target: 'pino-pretty',
-        options: { colorize: true },
-      },
-    }),
-  );
+const app = express();
 
-  app.use('/', mainRouter);
+app.use(express.json());
+app.use(cors());
 
-  app.use('*', notFoundHandler);
+app.use(
+  pino({
+    transport: {
+      target: 'pino-pretty',
+      options: { colorize: true },
+    },
+  }),
+);
 
-  app.use(errorHandler);
+app.use('/', mainRouter);
 
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-};
+app.use('*', notFoundHandler);
+
+app.use(errorHandler);
+
+export default app;

@@ -21,7 +21,10 @@ export const createContact = async ({
 
     return await newContact.save();
   } catch (error) {
-    console.error(error);
+    console.error('Error creating contact', error);
+    if (error.name === 'ValidationError') {
+      throw createHttpError(400, 'Invalid data provided');
+    }
     throw createHttpError(500, 'Error creating contact');
   }
 };
