@@ -77,48 +77,23 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const refreshSession = async (req, res, next) => {
+export const refreshSession = (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token is missing' });
+  }
+
   try {
-    const { refreshToken } = req.cookies;
-    if (!refreshToken) {
-      throw createHttpError(401, 'Refresh token is missing');
-    }
-
-    console.log('Received refresh token:', refreshToken);
-
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-    console.log('Decoded token:', decoded);
-
-    const user = await findUserByRefreshToken(refreshToken);
-    console.log('Found user:', user);
-
-    if (!user || user._id.toString() !== decoded.id) {
-      throw createHttpError(403, 'Invalid refresh token');
-    }
-
-    const newAccessToken = jwt.sign({ id: user._id }, JWT_ACCESS_SECRET, {
+    const newAccessToken = jwt.sign({ id: decoded.id }, JWT_ACCESS_SECRET, {
       expiresIn: '15m',
     });
-    const newRefreshToken = jwt.sign({ id: user._id }, JWT_REFRESH_SECRET, {
-      expiresIn: '7d',
-    });
 
-    await updateUserToken(user._id, newRefreshToken);
-
-    res.cookie('refreshToken', newRefreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'Strict',
-    });
-
-    res.status(200).json({
-      status: 200,
-      message: 'Successfully refreshed a session!',
-      data: { accessToken: newAccessToken },
-    });
+    res.json({ accessToken: newAccessToken });
+    // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    console.error('Error in refreshSession:', error);
-    next(error);
+    return res.status(403).json({ message: 'Invalid refresh token' });
   }
 };
 
@@ -130,8 +105,19 @@ export const logout = async (req, res, next) => {
       throw createHttpError(401, 'No refresh token provided');
     }
 
-    const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+    console.log('Received refresh token for logout:', refreshToken);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+      console.log('Decoded token:', decoded);
+    } catch (err) {
+      console.error('Error verifying refresh token:', err);
+      throw createHttpError(403, 'Invalid refresh token');
+    }
+
     const user = await findUserByRefreshToken(refreshToken);
+    console.log('Found user:', user);
 
     if (!user || user._id.toString() !== decoded.id) {
       throw createHttpError(403, 'Invalid refresh token');
@@ -141,7 +127,7 @@ export const logout = async (req, res, next) => {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Strict',
     });
 
