@@ -77,8 +77,9 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const refreshSession = (req, res) => {
-  const refreshToken = req.cookies?.refreshToken;
+export const refreshSession = (req, res, next) => {
+  const refreshToken =
+    req.cookies?.refreshToken || req.headers['authorization']?.split(' ')[1];
 
   if (!refreshToken) {
     return res.status(401).json({ message: 'Refresh token is missing' });
@@ -86,6 +87,7 @@ export const refreshSession = (req, res) => {
 
   try {
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+
     const newAccessToken = jwt.sign({ id: decoded.id }, JWT_ACCESS_SECRET, {
       expiresIn: '15m',
     });

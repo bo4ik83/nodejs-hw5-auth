@@ -1,5 +1,5 @@
-import createHttpError from 'http-errors';
 import jwt from 'jsonwebtoken';
+import createHttpError from 'http-errors';
 
 const { JWT_ACCESS_SECRET } = process.env;
 
@@ -7,7 +7,7 @@ export const authenticate = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
-    return next(createHttpError(401, 'No token provided'));
+    return next(createHttpError(401, 'Access token is missing'));
   }
 
   try {
@@ -16,6 +16,6 @@ export const authenticate = (req, res, next) => {
     next();
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    return next(createHttpError(401, 'Invalid token'));
+    return next(createHttpError(403, 'Invalid access token'));
   }
 };
