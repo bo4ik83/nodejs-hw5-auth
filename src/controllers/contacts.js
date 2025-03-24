@@ -9,7 +9,7 @@ import {
 
 export const getContactsController = async (req, res, next) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const contacts = await getContactsByUserId(userId);
 
     res.status(200).json({
@@ -26,7 +26,7 @@ export const getContactByIdController = async (req, res, next) => {
   try {
     const contact = await getContactByIdAndUser(
       req.params.contactId,
-      req.user._id,
+      req.user.id,
     );
 
     if (!contact) {
@@ -47,7 +47,7 @@ export const updateContactController = async (req, res, next) => {
   try {
     const updatedContact = await updateContact(
       req.params.contactId,
-      req.user._id,
+      req.user.id,
       req.body,
     );
 
@@ -69,7 +69,7 @@ export const createContactController = async (req, res, next) => {
   try {
     const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-    if (!req.user || !req.user._id) {
+    if (!req.user || !req.user.id) {
       throw createHttpError(401, 'Unauthorized: No user ID found');
     }
 
@@ -79,7 +79,7 @@ export const createContactController = async (req, res, next) => {
       email,
       isFavourite,
       contactType,
-      userId: req.user._id,
+      userId: req.user.id,
     });
 
     res.status(201).json({
@@ -96,7 +96,7 @@ export const deleteContactController = async (req, res, next) => {
   try {
     const deletedContact = await deleteContact(
       req.params.contactId,
-      req.user._id,
+      req.user.id,
     );
 
     if (!deletedContact) {

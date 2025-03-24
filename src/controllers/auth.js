@@ -77,25 +77,31 @@ export const login = async (req, res, next) => {
   }
 };
 
-export const refreshSession = (req, res, next) => {
-  const refreshToken =
-    req.cookies?.refreshToken || req.headers['authorization']?.split(' ')[1];
+export const refreshSession = (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
-    return res.status(401).json({ message: 'Refresh token is missing' });
+    return res
+      .status(401)
+      .json({ status: 401, message: 'Refresh token is missing' });
   }
 
   try {
     const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-
     const newAccessToken = jwt.sign({ id: decoded.id }, JWT_ACCESS_SECRET, {
       expiresIn: '15m',
     });
 
-    res.json({ accessToken: newAccessToken });
+    res.status(200).json({
+      status: 200,
+      message: 'Successfully refreshed a session!',
+      data: { accessToken: newAccessToken },
+    });
     // eslint-disable-next-line no-unused-vars
   } catch (error) {
-    return res.status(403).json({ message: 'Invalid refresh token' });
+    return res
+      .status(403)
+      .json({ status: 403, message: 'Invalid refresh token' });
   }
 };
 
