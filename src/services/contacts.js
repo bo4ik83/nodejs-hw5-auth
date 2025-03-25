@@ -1,48 +1,70 @@
 import Contact from '../db/models/contact.js';
-import createHttpError from 'http-errors';
 
-export const createContact = async ({
-  name,
-  phoneNumber,
-  email,
+export const getAllContacts = async ({
+  page,
+  perPage,
+  sortBy,
+  sortOrder,
+  type,
   isFavourite,
-  contactType,
-  userId,
 }) => {
-  try {
-    const newContact = new Contact({
-      name,
-      phoneNumber,
-      email,
-      isFavourite,
-      contactType,
-      userId,
-    });
+  const skip = page > 0 ? (page - 1) * perPage : 0;
 
-    return await newContact.save();
-  } catch (error) {
-    console.error('Error creating contact', error);
-    if (error.name === 'ValidationError') {
-      throw createHttpError(400, 'Invalid data provided');
-    }
-    throw createHttpError(500, 'Error creating contact');
-  }
+  const filter = {};
+  if (type) filter.contactType = type;
+  if (isFavourite !== undefined) filter.isFavourite = isFavourite === 'true';
+
+  const [total, contacts] = await Promise.all([
+    Contact.countDocuments(filter),
+    Contact.find(filter)
+      .sort({ [sortBy]: sortOrder })
+      .skip(skip)
+      .limit(perPage),
+  ]);
+
+  const totalPages = Math.ceil(total / perPage);
+
+  return {
+    data: contacts,
+    totalItems: total,
+    page,
+    perPage,
+    totalPages,
+    hasNextPage: totalPages > page,
+    hasPreviousPage: page > 1,
+  };
 };
 
-export const getContactsByUserId = async (userId) => {
-  return Contact.find({ userId });
+export const getContactById = async (contactId) => {
+  return await Contact.findById(contactId);
 };
 
-export const getContactByIdAndUser = async (contactId, userId) => {
-  return Contact.findOne({ _id: contactId, userId });
+export const createContact = async (contactData) => {
+  return await Contact.create(contactData);
 };
 
-export const updateContact = async (contactId, userId, updatedData) => {
-  return Contact.findOneAndUpdate({ _id: contactId, userId }, updatedData, {
+export const patchContact = async (contactId, updateData) => {
+  return await Contact.findByIdAndUpdate(contactId, updateData, {
     new: true,
+    runValidators: true,
   });
 };
 
-export const deleteContact = async (contactId, userId) => {
-  return Contact.findOneAndDelete({ _id: contactId, userId });
+export const deleteContact = async (contactId) => {
+  return await Contact.findByIdAndDelete(contactId);
+};
+
+export const getContactByPhoneNumber = async (phoneNumber) => {
+  return await Contact.findOne({ phoneNumber });
+};
+
+export const updateContact = async (contactId, updateData) => {
+  try {
+    return await Contact.findByIdAndUpdate(contactId, updateData, {
+      new: true,
+    });
+    // eslint-disable-next-line no-unused-vars
+  } catch (error) {
+    throw new Error('Error updating contact');
+  }
 };

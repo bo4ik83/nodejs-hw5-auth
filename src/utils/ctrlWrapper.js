@@ -1,3 +1,5 @@
+import { parseSortParams } from './parsSortParams.js';
+
 const ctrlWrapper = (ctrl) => async (req, res, next) => {
   try {
     await ctrl(req, res, next);
@@ -7,3 +9,4 @@ const ctrlWrapper = (ctrl) => async (req, res, next) => {
 };
 
 export default ctrlWrapper;
+export { parseSortParams };
