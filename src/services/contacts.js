@@ -1,70 +1,68 @@
-import Contact from '../db/models/contact.js';
+import { ContactsCollection } from '../db/models/contact.js';
+import { calculatePaginationData } from '../utils/calculatePaginationData.js';
 
-export const getAllContacts = async ({
-  page,
-  perPage,
-  sortBy,
-  sortOrder,
-  type,
-  isFavourite,
-}) => {
-  const skip = page > 0 ? (page - 1) * perPage : 0;
+export async function getContacts({
+  page = 1,
+  perPage = 10,
+  sortBy = '_id',
+  sortOrder = 'asc',
+  filter = {},
+  userId,
+}) {
+  const skip = (page - 1) * perPage;
+  const query = ContactsCollection.find();
+  if (filter.contactType) {
+    query.where('contactType').equals(filter.contactType);
+  }
+  if (typeof filter.isFavourite === 'boolean') {
+    query.where('isFavourite').equals(filter.isFavourite);
+  }
 
-  const filter = {};
-  if (type) filter.contactType = type;
-  if (isFavourite !== undefined) filter.isFavourite = isFavourite === 'true';
+  query.where('userId').equals(userId);
 
-  const [total, contacts] = await Promise.all([
-    Contact.countDocuments(filter),
-    Contact.find(filter)
-      .sort({ [sortBy]: sortOrder })
+  const [totalItems, data] = await Promise.all([
+    ContactsCollection.find().merge(query).countDocuments(),
+    ContactsCollection.find()
+      .merge(query)
       .skip(skip)
-      .limit(perPage),
+      .limit(perPage)
+      .sort({ [sortBy]: sortOrder })
+      .exec(),
   ]);
 
-  const totalPages = Math.ceil(total / perPage);
+  const paginationData = calculatePaginationData(totalItems, page, perPage);
+  return {
+    data,
+    ...paginationData,
+  };
+}
+
+export async function getContactById({ _id, userId }) {
+  return await ContactsCollection.findOne({ _id, userId });
+}
+
+export async function createContact(payload) {
+  return await ContactsCollection.create(payload);
+}
+
+export async function updateContact({ _id, userId }, payload, options = {}) {
+  const rawResult = await ContactsCollection.findOneAndUpdate(
+    { _id, userId },
+    payload,
+    {
+      includeResultMetadata: true,
+      ...options,
+    },
+  );
+
+  if (!rawResult || !rawResult.value) return null;
 
   return {
-    data: contacts,
-    totalItems: total,
-    page,
-    perPage,
-    totalPages,
-    hasNextPage: totalPages > page,
-    hasPreviousPage: page > 1,
+    data: rawResult.value,
+    isNew: Boolean(rawResult?.lastErrorObject?.upserted),
   };
-};
+}
 
-export const getContactById = async (contactId) => {
-  return await Contact.findById(contactId);
-};
-
-export const createContact = async (contactData) => {
-  return await Contact.create(contactData);
-};
-
-export const patchContact = async (contactId, updateData) => {
-  return await Contact.findByIdAndUpdate(contactId, updateData, {
-    new: true,
-    runValidators: true,
-  });
-};
-
-export const deleteContact = async (contactId) => {
-  return await Contact.findByIdAndDelete(contactId);
-};
-
-export const getContactByPhoneNumber = async (phoneNumber) => {
-  return await Contact.findOne({ phoneNumber });
-};
-
-export const updateContact = async (contactId, updateData) => {
-  try {
-    return await Contact.findByIdAndUpdate(contactId, updateData, {
-      new: true,
-    });
-    // eslint-disable-next-line no-unused-vars
-  } catch (error) {
-    throw new Error('Error updating contact');
-  }
-};
+export async function deleteContact({ _id, userId }) {
+  return await ContactsCollection.findOneAndDelete({ _id, userId });
+}
